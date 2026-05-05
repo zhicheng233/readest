@@ -1,6 +1,13 @@
 import { FileHandle, open, BaseDirectory, SeekMode } from '@tauri-apps/plugin-fs';
 import { getOSPlatform } from './misc';
 
+const IS_ANDROID = getOSPlatform() === 'android';
+const NATIVE_CACHE_CHUNK_SIZE = IS_ANDROID ? 256 * 1024 : 1024 * 1024;
+const NATIVE_CACHE_ITEMS_SIZE = IS_ANDROID ? 8 : 50;
+const FILE_STREAM_CHUNK_SIZE = IS_ANDROID ? 256 * 1024 : 1024 * 1024;
+const REMOTE_CACHE_CHUNK_SIZE = IS_ANDROID ? 64 * 1024 : 1024 * 128;
+const REMOTE_CACHE_ITEMS_SIZE = IS_ANDROID ? 32 : 128;
+
 class DeferredBlob extends Blob {
   #dataPromise: Promise<ArrayBuffer>;
   #type: string;
@@ -64,8 +71,8 @@ export class NativeFile extends File implements ClosableFile {
   #size: number = -1;
   #type: string = '';
 
-  static MAX_CACHE_CHUNK_SIZE = 1024 * 1024;
-  static MAX_CACHE_ITEMS_SIZE = 50;
+  static MAX_CACHE_CHUNK_SIZE = NATIVE_CACHE_CHUNK_SIZE;
+  static MAX_CACHE_ITEMS_SIZE = NATIVE_CACHE_ITEMS_SIZE;
   #order: number[] = [];
   #cache: Map<number, ArrayBuffer> = new Map();
   #pendingReads: Map<string, Promise<ArrayBuffer>> = new Map();
@@ -215,7 +222,7 @@ export class NativeFile extends File implements ClosableFile {
   }
 
   override stream(): ReadableStream<Uint8Array<ArrayBuffer>> {
-    const CHUNK_SIZE = 1024 * 1024;
+    const CHUNK_SIZE = FILE_STREAM_CHUNK_SIZE;
     let offset = 0;
     let streamHandle: FileHandle | null = null;
     let streamClosed = false;
@@ -287,8 +294,8 @@ export class RemoteFile extends File implements ClosableFile {
   #cache: Map<number, ArrayBuffer> = new Map(); // LRU cache
   #pendingFetches: Map<string, Promise<ArrayBuffer>> = new Map();
 
-  static MAX_CACHE_CHUNK_SIZE = 1024 * 128;
-  static MAX_CACHE_ITEMS_SIZE: number = 128;
+  static MAX_CACHE_CHUNK_SIZE = REMOTE_CACHE_CHUNK_SIZE;
+  static MAX_CACHE_ITEMS_SIZE: number = REMOTE_CACHE_ITEMS_SIZE;
 
   constructor(url: string, name?: string, type = '', lastModified = Date.now()) {
     const basename = url.split('/').pop() || 'remote-file';
@@ -454,7 +461,7 @@ export class RemoteFile extends File implements ClosableFile {
   }
 
   override stream(): ReadableStream<Uint8Array<ArrayBuffer>> {
-    const CHUNK_SIZE = 1024 * 1024;
+    const CHUNK_SIZE = FILE_STREAM_CHUNK_SIZE;
     let offset = 0;
 
     return new ReadableStream<Uint8Array<ArrayBuffer>>({
