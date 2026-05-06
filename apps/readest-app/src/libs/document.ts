@@ -244,7 +244,7 @@ export class DocumentLoader {
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {
-        const { makePDF } = await import('foliate-js/pdf.js');
+        const { makePDF } = await import('@/libs/pdf');
         book = await makePDF(this.file);
         format = 'PDF';
       } else if (await (await import('foliate-js/mobi.js')).isMOBI(this.file)) {

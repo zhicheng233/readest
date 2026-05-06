@@ -7,6 +7,7 @@ const NATIVE_CACHE_ITEMS_SIZE = IS_ANDROID ? 8 : 50;
 const FILE_STREAM_CHUNK_SIZE = IS_ANDROID ? 256 * 1024 : 1024 * 1024;
 const REMOTE_CACHE_CHUNK_SIZE = IS_ANDROID ? 64 * 1024 : 1024 * 128;
 const REMOTE_CACHE_ITEMS_SIZE = IS_ANDROID ? 32 : 128;
+const REMOTE_MAX_RANGE_LEN = IS_ANDROID ? 64 * 1024 : 1024 * 1000;
 
 class DeferredBlob extends Blob {
   #dataPromise: Promise<ArrayBuffer>;
@@ -370,7 +371,7 @@ export class RemoteFile extends File implements ClosableFile {
   // inclusive reading of the end: [start, end]
   async fetchRange(start: number, end: number): Promise<ArrayBuffer> {
     const rangeSize = end - start + 1;
-    const MAX_RANGE_LEN = 1024 * 1000;
+    const MAX_RANGE_LEN = REMOTE_MAX_RANGE_LEN;
 
     if (rangeSize > MAX_RANGE_LEN) {
       const buffers: ArrayBuffer[] = [];
